@@ -70,7 +70,7 @@ def fetch_offradio_playlist(url='http://www.offradio.gr/player'):
 
 def dl_ytPlaylist(playlist):
     
-    fldr_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    fldr_time = strftime("%Y-%m-%d %H%M%S", gmtime())
     fldr_dl = 'dl_playlists/{}/%(title)s.%(ext)s'.format(fldr_time)
     
     for pl in playlist:
