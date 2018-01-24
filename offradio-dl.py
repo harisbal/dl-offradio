@@ -8,6 +8,7 @@ import os
 import requests
 import re
 import youtube_dl
+import tqdm
 from bs4 import BeautifulSoup
 from time import gmtime, strftime
 
@@ -39,7 +40,7 @@ def my_hook(d):
 def fetch_offradio_playlist(url='http://www.offradio.gr/player'):
     r  = requests.get(url)
     data = r.text
-    soup = BeautifulSoup(data)
+    soup = BeautifulSoup(data, 'html5lib')
     
     data = []
     artists = []
@@ -73,43 +74,39 @@ def dl_ytPlaylist(playlist):
     fldr_time = strftime("%Y-%m-%d %H%M%S", gmtime())
     fldr_dl = 'dl_playlists/{}/%(title)s.%(ext)s'.format(fldr_time)
     
-    for pl in playlist:
-        ydl_opts = {
-            'outtmpl': fldr_dl ,
-            'default_search': 'ytsearch1:{}'.format(pl),
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'logger': MyLogger(),
-            'progress_hooks': [my_hook],
-        }
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download('-1') # I don't like the '-1' , it justs requires a invalid query
 
+    # Load tqdm with size counter instead of file counter
+    with tqdm.tqdm(total=len(playlist), desc='Downloading') as pbar:
+        for song in playlist:
+            pbar.set_postfix(song=song, refresh=False)
+            pbar.update()
 
-# In[52]:
+            ydl_opts = {
+                'outtmpl': fldr_dl ,
+                'default_search': 'ytsearch1:{}'.format(song),
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'logger': MyLogger(),
+                'progress_hooks': [my_hook],
+            }
+                        
+            with youtube_dl.YoutubeDL(ydl_opts) as ytdl:
+                ytdl.download('-1') # I don't like the '-1', it justs requires a invalid query
 
 
 def main():
     
     # Fetch the list
+    print('Fetch playlist')
     playlist = fetch_offradio_playlist()
     
     # Download it
     dl_ytPlaylist(playlist)
 
 
-# In[53]:
-
-
-main()
-
-
-# In[ ]:
-
-
-
-
+if __name__ == '__main__':
+    main()
